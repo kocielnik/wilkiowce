@@ -1,0 +1,3 @@
+[submodule "external/sheep-and-wolf"]
+	path = external/sheep-and-wolf
+	url = https://github.com/lgajowy/sheep-and-wolf
