@@ -31,3 +31,20 @@ sheep_3 = Sheep (5,0)
 
 sheep_4 :: Sheep
 sheep_4 = Sheep (7,0)
+
+type Sheeps = [Sheep]
+
+sheeps :: Sheeps
+sheeps = [sheep_1, sheep_2, sheep_3, sheep_4]
+
+printSheeps :: Sheeps -> IO()
+printSheeps [] = putStrLn " "
+printSheeps (sheep:sheeps) = do
+    printSheep sheep
+    printSheeps sheeps
+
+updateSheeps :: Sheeps -> Sheep -> Sheep -> Sheeps
+updateSheeps [] oldSheep newSheep = error "Brak owiec"
+updateSheeps (sheep:sheeps) oldSheep newSheep
+    | sheep == oldSheep         = newSheep : sheeps
+    | otherwise                 = sheep : (updateSheeps sheeps oldSheep newSheep)

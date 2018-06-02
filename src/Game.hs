@@ -29,7 +29,6 @@ getOption strToOption = do
 
 --TODO: Create this
 startNewGame = do
-    printGameState startingGameState
     gameLoop startingGameState
 
 --TODO: Create this
@@ -53,11 +52,14 @@ wrongValue endpoint = do
     endpoint
 
 -- GameLoop, main game content
-gameLoop gameState = do
-    wolf <- moveWolf
-    let updatedGameState = updateGameStateWolf gameState wolf
-    printGameState updatedGameState
-    chooseInGameOption updatedGameState
+gameLoop gameState@(GameState wolf sheeps turn)
+    | turn == WolfTurn  = do
+      printGameState gameState
+      -- Tutaj zamiast Wolf (1,3) będzie wynik predykcji AI
+      gameLoop (updateGameStateWolf gameState (Wolf (1,3)))
+    | turn == SheepTurn = do
+      printGameState gameState
+      chooseInGameOption gameState
 
 -- Showing ang getting in game options
 chooseInGameOption gameState = do
@@ -81,20 +83,15 @@ makeMove gameState = do
         Sheep_4 -> moveSheep sheep_4 gameState
         WrongValue -> wrongValue (makeMove gameState)
 
--- Returning wolf after position update
-moveWolf = do
-    -- Tutaj wydaje mi się, że Ai powinno zwracać ruch wilka tzn. obiekt wilk z nowymi wsp.
-    return (Wolf (1,3))
-
--- Return sheep after position update
-moveSheep sheep gameState = do
-    let sheep = Sheep (1,1)
-    printGameState (updateGameStateSheep gameState sheep)
+-- Returning sheep after position update
+moveSheep sheep gameState@(GameState wolf sheeps turn) = do
+    -- Tu zamiast Sheep (1,1) będzie wynik wyboru użytkownika z możliwch opcji
+    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep (1,1))))
 
 -- Updating Game State after wolf move
 updateGameStateWolf :: GameState -> Wolf -> GameState
 updateGameStateWolf (GameState _ ss _) p = GameState p ss SheepTurn
 
 -- Updating Game State after sheep move (Alfa)
-updateGameStateSheep :: GameState -> Sheep -> GameState
-updateGameStateSheep (GameState w _ _) p = GameState w [p] WolfTurn
+updateGameStateSheep :: GameState -> Sheeps -> GameState
+updateGameStateSheep (GameState w _ _) ss = GameState w ss WolfTurn
