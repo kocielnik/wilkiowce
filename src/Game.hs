@@ -27,7 +27,7 @@ getOption strToOption = do
     let option = strToOption choice
     return option
 
---TODO: Create this
+-- Main game loop
 startNewGame = do
     gameLoop startingGameState
 
@@ -53,6 +53,12 @@ wrongValue endpoint = do
 
 -- GameLoop, main game content
 gameLoop gameState@(GameState wolf sheeps turn)
+    | getWinner gameState == WolfWinner = do
+      putStrLn loseMessage
+      startGame
+    | getWinner gameState == SheepWinner = do
+      putStrLn winMessage
+      startGame
     | turn == WolfTurn  = do
       printGameState gameState
       -- Tutaj zamiast Wolf (1,3) będzie wynik predykcji AI
@@ -74,6 +80,7 @@ chooseInGameOption gameState = do
 
 -- Getting move option from player and making it
 makeMove gameState = do
+    putStrLn chooseSheepMessage
     printMenu chooseSheepMenu
     option <- getOption strToMenuOption
     case option of
@@ -85,7 +92,7 @@ makeMove gameState = do
 
 -- Returning sheep after position update
 moveSheep sheep gameState@(GameState wolf sheeps turn) = do
-    -- Tu zamiast Sheep (1,1) będzie wynik wyboru użytkownika z możliwch opcji
+    -- Tu zamiast Sheep (1,1) będzie wynik wyboru użytkownika z możliwch opcji (Możliwe opcje to w prawo w dół lub w lew w dół)
     gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep (1,1))))
 
 -- Updating Game State after wolf move
@@ -95,3 +102,8 @@ updateGameStateWolf (GameState _ ss _) p = GameState p ss SheepTurn
 -- Updating Game State after sheep move (Alfa)
 updateGameStateSheep :: GameState -> Sheeps -> GameState
 updateGameStateSheep (GameState w _ _) ss = GameState w ss WolfTurn
+
+getWinner :: GameState -> Winner
+getWinner gameState
+    -- Tutaj sprawdzanie czy ktoś nie wygrał tzn czy wilk ma jeszcze jakiś ruch, lub czy dostał się do któregoś z górnych pól (x,0)
+    | otherwise = Neither
