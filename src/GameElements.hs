@@ -14,8 +14,8 @@ printWolf wolf = putStrLn (show wolf)
 
 data Sheep = Sheep Point deriving (Show, Eq)
 
-printSheep :: Sheep -> IO()
-printSheep sheep = putStrLn (show sheep)
+printSheep :: Sheep -> Int -> IO()
+printSheep sheep n = putStrLn (show sheep ++ " (" ++ (show n) ++ ")")
 
 -- Creating wolf
 wolf :: Wolf
@@ -41,11 +41,11 @@ sheeps :: Sheeps
 sheeps = [sheep_1, sheep_2, sheep_3, sheep_4]
 
 -- Printing sheeps list
-printSheeps :: Sheeps -> IO()
-printSheeps [] = putStrLn " "
-printSheeps (sheep:sheeps) = do
-    printSheep sheep
-    printSheeps sheeps
+printSheeps :: Sheeps -> Int -> IO()
+printSheeps [] _ = putStrLn " "
+printSheeps (sheep:sheeps) n = do
+    printSheep sheep n
+    printSheeps sheeps (n+1)
 
 -- Updating sheeps list
 updateSheeps :: Sheeps -> Sheep -> Sheep -> Sheeps
@@ -53,3 +53,4 @@ updateSheeps [] oldSheep newSheep = error "Brak owiec"
 updateSheeps (sheep:sheeps) oldSheep newSheep
     | sheep == oldSheep         = newSheep : sheeps
     | otherwise                 = sheep : (updateSheeps sheeps oldSheep newSheep)
+

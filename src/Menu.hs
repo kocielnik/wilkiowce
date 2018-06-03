@@ -6,7 +6,7 @@ import GameElements
 
 type Menu = [MenuOption]
 
-data MenuOption = NewGame | LoadGame | ExitGame | SaveGame | MakeMove | WrongValue | Sheep_1 | Sheep_2 | Sheep_3 | Sheep_4
+data MenuOption = NewGame | LoadGame | ExitGame | SaveGame | MakeMove | WrongValue | Sheep_1 | Sheep_2 | Sheep_3 | Sheep_4 | PossibleMove_1 | PossibleMove_2
 
 -- Creating instance of Show class
 instance Show MenuOption where
@@ -16,10 +16,6 @@ instance Show MenuOption where
     show SaveGame = "Zapisz grę (S)"
     show MakeMove = "Wykonaj ruch (M)"
     show WrongValue = "Podano złą wartość"
-    show Sheep_1 = show sheep_1 ++ "(1)"
-    show Sheep_2 = show sheep_2 ++ "(2)"
-    show Sheep_3 = show sheep_3 ++ "(3)"
-    show Sheep_4 = show sheep_4 ++ "(4)"
 
 -- Converting MenuOption to Output
 printOption :: MenuOption -> IO()
@@ -33,17 +29,36 @@ printMenu (item:menu) = do
     printMenu menu
 
 -- Converting String to MenuOption
-strToMenuOption :: String -> MenuOption
-strToMenuOption option = case option of
+strToStartingMenuOption :: String -> MenuOption
+strToStartingMenuOption option = case option of
     "N" -> NewGame
     "L" -> LoadGame
     "E" -> ExitGame
+    _ -> WrongValue
+
+-- Converting String to MenuOption
+strToInGameMenuOption :: String -> MenuOption
+strToInGameMenuOption option = case option of
+    "N" -> NewGame
+    "E" -> ExitGame
     "S" -> SaveGame
     "M" -> MakeMove
+    _ -> WrongValue
+
+-- Converting String to MenuOption
+strToChooseSheepMenuOption :: String -> MenuOption
+strToChooseSheepMenuOption option = case option of
     "1" -> Sheep_1
     "2" -> Sheep_2
     "3" -> Sheep_3
     "4" -> Sheep_4
+    _ -> WrongValue
+
+-- Converting String to MenuOption
+strToChooseNewPositionMenuOption :: String -> MenuOption
+strToChooseNewPositionMenuOption option = case option of
+    "1" -> PossibleMove_1
+    "2" -> PossibleMove_2
     _ -> WrongValue
 
 -- Creating starting menu
@@ -55,4 +70,12 @@ inGameMenu :: Menu
 inGameMenu = [NewGame, ExitGame, SaveGame, MakeMove]
 
 -- Creating choose sheep menu
+chooseSheepMenu :: Menu
 chooseSheepMenu = [Sheep_1, Sheep_2, Sheep_3, Sheep_4]
+
+-- Creating choose new sheep position menu
+chooseSheepPositionMenu :: Menu
+chooseSheepPositionMenu = [PossibleMove_1, PossibleMove_2]
+
+possibleMove_1 = (0,0)
+possibleMove_2 = (0,0)

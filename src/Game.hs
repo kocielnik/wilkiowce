@@ -14,7 +14,7 @@ run = do
 
 startGame = do
     printMenu startingMenu
-    option <- getOption strToMenuOption
+    option <- getOption strToStartingMenuOption
     case option of
         NewGame -> startNewGame
         LoadGame -> loadGame
@@ -70,7 +70,7 @@ gameLoop gameState@(GameState wolf sheeps turn)
 -- Showing ang getting in game options
 chooseInGameOption gameState = do
     printMenu inGameMenu
-    option <- getOption strToMenuOption
+    option <- getOption strToInGameMenuOption
     case option of
         NewGame -> startNewGame
         ExitGame -> exitGame
@@ -79,31 +79,62 @@ chooseInGameOption gameState = do
         WrongValue -> wrongValue (chooseInGameOption gameState)
 
 -- Getting move option from player and making it
-makeMove gameState = do
+makeMove gameState@(GameState wolf sheeps turn) = do
     putStrLn chooseSheepMessage
-    printMenu chooseSheepMenu
-    option <- getOption strToMenuOption
+    printSheeps sheeps 1
+    option <- getOption strToChooseSheepMenuOption
     case option of
-        Sheep_1 -> moveSheep sheep_1 gameState
-        Sheep_2 -> moveSheep sheep_2 gameState
-        Sheep_3 -> moveSheep sheep_3 gameState
-        Sheep_4 -> moveSheep sheep_4 gameState
+        Sheep_1 -> moveSheep (sheeps!!0) gameState
+        Sheep_2 -> moveSheep (sheeps!!1) gameState
+        Sheep_3 -> moveSheep (sheeps!!2) gameState
+        Sheep_4 -> moveSheep (sheeps!!3) gameState
         WrongValue -> wrongValue (makeMove gameState)
 
--- Returning sheep after position update
+-- Moving sheep and run again gameLoop
 moveSheep sheep gameState@(GameState wolf sheeps turn) = do
-    -- Tu zamiast Sheep (1,1) będzie wynik wyboru użytkownika z możliwch opcji (Możliwe opcje to w prawo w dół lub w lew w dół)
-    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep (1,1))))
+    newSheepPosition <- chooseNewSheepPosition sheep
+    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition)))
 
 -- Updating Game State after wolf move
 updateGameStateWolf :: GameState -> Wolf -> GameState
 updateGameStateWolf (GameState _ ss _) p = GameState p ss SheepTurn
 
--- Updating Game State after sheep move (Alfa)
+-- Updating Game State after sheep move
 updateGameStateSheep :: GameState -> Sheeps -> GameState
 updateGameStateSheep (GameState w _ _) ss = GameState w ss WolfTurn
 
+-- Predicting if game is end
 getWinner :: GameState -> Winner
 getWinner gameState
     -- Tutaj sprawdzanie czy ktoś nie wygrał tzn czy wilk ma jeszcze jakiś ruch, lub czy dostał się do któregoś z górnych pól (x,0)
     | otherwise = Neither
+
+-- Getting from user new sheep position
+chooseNewSheepPosition sheep = do
+    putStrLn chooseNewSheepPositionMessage
+    possibleMoves <- possibleSheepMoves sheep
+    printPossibleMoves possibleMoves 1
+    option <- getOption strToChooseNewPositionMenuOption
+    let listLen = length possibleMoves
+    case listLen of
+        1 -> do
+            case option of
+                PossibleMove_1 -> return (possibleMoves!!0)
+                PossibleMove_2 -> wrongValue (chooseNewSheepPosition sheep)
+                WrongValue -> wrongValue (chooseNewSheepPosition sheep)
+        2 -> do
+            case option of
+                PossibleMove_1 -> return (possibleMoves!!0)
+                PossibleMove_2 -> return (possibleMoves!!1)
+                WrongValue -> wrongValue (chooseNewSheepPosition sheep)
+
+-- Returning possible sheep moves
+possibleSheepMoves sheep = do
+    -- Tu będzą, zamiast tego returna, możliwe opcje (Możliwe opcje to w prawo w dół lub w lew w dół)
+    return [(0,1), (2,1)]
+
+-- Printing possible moves (2 max)
+printPossibleMoves [] _ = putStrLn " "
+printPossibleMoves (move:moves) n = do
+    putStrLn (show move ++ " (" ++ (show n) ++ ")")
+    printPossibleMoves moves (n+1)
