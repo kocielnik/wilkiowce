@@ -1,10 +1,9 @@
+module Backend where
 
-indexedList :: [a] -> [(Int, a)]
-indexedList a = indexedList' 0 a
-
-indexedList' :: Int -> [a] -> [(Int, a)]
-indexedList' i (x:xs) = [(i, x)] ++ (indexedList' (i+1) xs)
-indexedList' _ [] = []
+import Data.Binary
+import GameElements
+import Menu
+import GameState
 
 surroundingFields :: Point -> [Point]
 surroundingFields (Point x y)
@@ -50,14 +49,14 @@ instance Binary Turn where
   put t = case t of
     WolfTurn -> do
       put (0 :: Word8)
-    HoundsTurn -> do
+    SheepTurn -> do
       put (1 :: Word8)
 
   get = do
     t <- get :: (Get Word8)
     case t of
       0 -> return WolfTurn
-      1 -> return HoundsTurn
+      1 -> return SheepTurn
 
 instance Binary GameState where
   put (GameState w hs t) = do
@@ -87,10 +86,10 @@ load = do
   name <- getLine
   decodeFile name :: IO GameState
 
--- Hounds moves
+-- Sheep moves
 
-getHoundsMove :: GameState -> GameState -> GameState
-getHoundsMove (GameState w hs _) (GameState _ newHs _) = (GameState w newHs WolfTurn)
+getSheepMove :: GameState -> GameState -> GameState
+getSheepMove (GameState w hs _) (GameState _ newHs _) = (GameState w newHs WolfTurn)
 
 houndsMove :: GameState -> GameState
 houndsMove g = getBestMove g
@@ -105,14 +104,14 @@ getBestMove g = snd (maximumBy fstCmp rates)
     rates = [(getGameStateRate m depth, m) | m <- possible]
 
 getPossibleMoves :: GameState -> [GameState]
-getPossibleMoves g@(GameState w hs WolfTurn) = [GameState loc hs HoundsTurn | loc <- locations]
+getPossibleMoves g@(GameState w hs WolfTurn) = [GameState loc hs SheepTurn | loc <- locations]
   where
     locations = [p | p <- (surroundingFields w), not (isOccupied g p)]
-getPossibleMoves g@(GameState w hs HoundsTurn) = getHoundPossibleMoves g [] hs
+getPossibleMoves g@(GameState w hs SheepTurn) = getSheepPossibleMoves g [] hs
 --                      done  not done
-getHoundPossibleMoves :: GameState -> [Point] -> [Point] -> [GameState]
-getHoundPossibleMoves _ _ [] = []
-getHoundPossibleMoves g@(GameState w _ _) done (cur@(Point _ hy):ndone) = [(GameState w (done ++ [loc] ++ ndone) WolfTurn) | loc <- locations] ++ (getHoundPossibleMoves g (done ++ [cur]) ndone)
+getSheepPossibleMoves :: GameState -> [Point] -> [Point] -> [GameState]
+getSheepPossibleMoves _ _ [] = []
+getSheepPossibleMoves g@(GameState w _ _) done (cur@(Point _ hy):ndone) = [(GameState w (done ++ [loc] ++ ndone) WolfTurn) | loc <- locations] ++ (getSheepPossibleMoves g (done ++ [cur]) ndone)
   where locations = [p | p@(Point _ py) <- (surroundingFields cur), (not (isOccupied g p)) && py > hy]
 
 getGameStateRate :: GameState -> Int -> Int
@@ -134,12 +133,12 @@ fstCmp (a1, b1) (a2, b2)
 getGameStateRate' :: GameState -> Int
 getGameStateRate' g@(GameState w hs t) =
   case (getWinner g) of
-    Hounds  -> 100
+    Sheep  -> 100
     Wolf  -> -100
-    Neither -> (getSurroundingHoundsCount w hs) * 20 - (wolfDistance w) * 10 - 10 * (fault1 w hs)
+    Neither -> (getSurroundingSheepCount w hs) * 20 - (wolfDistance w) * 10 - 10 * (fault1 w hs)
 
-getSurroundingHoundsCount :: Point -> [Point] -> Int
-getSurroundingHoundsCount w hs = length [h | h <- hs, isNeighbour w h]
+getSurroundingSheepCount :: Point -> [Point] -> Int
+getSurroundingSheepCount w hs = length [h | h <- hs, isNeighbour w h]
 
 isNeighbour :: Point -> Point -> Bool
 isNeighbour (Point px py) (Point qx qy) = (abs (px - qx) == 1) && (abs (py - qy) == 1)
