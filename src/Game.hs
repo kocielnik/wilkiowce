@@ -5,7 +5,7 @@ import Messages
 import System.Exit
 import GameState
 import GameElements
-import LoadSave
+--import LoadSave
 
 main = startGame
 

@@ -2,20 +2,22 @@ module LoadSave where
 
 import Data.Binary
 import System.IO
+import Data.Coerce
 import GameElements
 import GameState
 
-data Position = Position Int Int deriving (Show, Eq)
+data Position = Position Point deriving (Show, Eq)
+--newtype Position a b = Position (a,b)
 
 instance Binary Position where
-  put (Position x y) = do
+  put (Position (x,y)) = do
     put ((fromIntegral x) :: Word8)
     put ((fromIntegral y) :: Word8)
 
   get = do
     x <- get :: Get Word8
     y <- get :: Get Word8
-    return (Position ((fromIntegral x) :: Int) ((fromIntegral y) :: Int))
+    return (Position (((fromIntegral x) :: Int), ((fromIntegral y) :: Int)))
 
 instance Binary Turn where
   put t = case t of
@@ -37,8 +39,8 @@ instance Binary GameState where
     put t
 
   get = do
-    w <- get :: Get Position
-    hs <- get :: Get [Position]
+    w <- get :: Get Wolf
+    hs <- get :: Get [Sheep]
     t <- get :: Get Turn
     return (GameState w hs t)
 
