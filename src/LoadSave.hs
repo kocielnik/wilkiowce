@@ -19,6 +19,26 @@ instance Binary Position where
     y <- get :: Get Word8
     return (Position (((fromIntegral x) :: Int), ((fromIntegral y) :: Int)))
 
+instance Binary Wolf where
+  put (Wolf (x,y)) = do
+    put ((fromIntegral x) :: Word8)
+    put ((fromIntegral y) :: Word8)
+
+  get = do
+    x <- get :: Get Word8
+    y <- get :: Get Word8
+    return (Wolf (((fromIntegral x) :: Int), ((fromIntegral y) :: Int)))
+
+instance Binary Sheep where
+  put (Sheep (x,y)) = do
+    put ((fromIntegral x) :: Word8)
+    put ((fromIntegral y) :: Word8)
+
+  get = do
+    x <- get :: Get Word8
+    y <- get :: Get Word8
+    return (Sheep (((fromIntegral x) :: Int), ((fromIntegral y) :: Int)))
+
 instance Binary Turn where
   put t = case t of
     WolfTurn -> do

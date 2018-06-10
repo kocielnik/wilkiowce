@@ -5,7 +5,8 @@ import Messages
 import System.Exit
 import GameState
 import GameElements
---import LoadSave
+import LoadSave
+import Control.Exception
 
 main = startGame
 
@@ -13,6 +14,8 @@ run = do
     putStrLn startingMessage
     putStrLn startingOptionsHeader
     startGame
+
+menu = startGame
 
 startGame = do
     printMenu startingMenu
@@ -36,7 +39,14 @@ startNewGame = do
 --TODO: Create this
 loadGame = do
     putStrLn "Wczytaj gre"
-    startGame
+    savedState <- try (load :: IO GameState) :: IO (Either IOException GameState)
+    case savedState of
+        Left ex -> do
+            putStrLn "Wczytanie nie powiodło się."
+            menu
+        Right savedState -> do
+            gameLoop savedState
+            menu
 
 -- Exit game
 exitGame = do
@@ -44,9 +54,10 @@ exitGame = do
     exitSuccess
 
 -- Save game
-saveGame = do
+saveGame gameState = do
     putStrLn "Save"
-    startGame
+    save gameState
+    gameLoop gameState
 
 -- Returning error and show starting menu
 wrongValue endpoint = do
@@ -76,7 +87,7 @@ chooseInGameOption gameState = do
     case option of
         NewGame -> startNewGame
         ExitGame -> exitGame
-        SaveGame -> saveGame
+        SaveGame -> saveGame gameState
         MakeMove -> makeMove gameState
         WrongValue -> wrongValue (chooseInGameOption gameState)
 
