@@ -2,8 +2,12 @@ module GameElements where
 
 import Data.List
 
-
 type Point = (Int, Int)
+--data Position a b = Point (a, b) deriving (Show, Eq)
+--data Point a b = Point (a, b) deriving (Show, Eq)
+--data Point (a, b) = Point (a, b)
+--Point (x, y) = (x, y)
+--Point x y = (x, y)
 
 data Turn = WolfTurn | SheepTurn deriving (Show, Eq)
 data Winner = WolfWinner | SheepWinner | Neither deriving (Show, Eq)

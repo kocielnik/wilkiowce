@@ -1,23 +1,37 @@
 module Backend where
 
 import Data.Binary
+import Data.Ord
+import System.IO
 import GameElements
 import Menu
 import GameState
 
-surroundingFields :: Point -> [Point]
-surroundingFields (Point x y)
-  | x == 0 && y == 0  = [Point (x+1) (y+1)]
-  | x == 0 && y == 7  = [Point (x+1) (y-1)]
-  | x == 7 && y == 0  = [Point (x-1) (y+1)]
-  | x == 7 && y == 7  = [Point (x-1) (y-1)]
-  | x == 0      = [(Point (x+1) (y-1)), (Point (x+1) (y+1))]
-  | x == 7      = [(Point (x-1) (y-1)), (Point (x-1) (y+1))]
-  | y == 0      = [(Point (x-1) (y+1)), (Point (x+1) (y+1))]
-  | y == 7      = [(Point (x-1) (y-1)), (Point (x+1) (y-1))]
-  | otherwise     = [(Point (x-1) (y-1)), (Point (x-1) (y+1)), (Point (x+1) (y-1)), (Point (x+1) (y+1))]
+--data Position = Position Int Int deriving (Show, Eq)
 
-isOccupied :: GameState -> Point -> Bool
+--point :: Position -> Point
+--point a b = (a, b)
+
+--position :: Point -> Position
+--point (a, b) = a b
+--type Position a b = (a, b)
+
+data Position a b = Position (a, b) deriving (Show, Eq)
+
+surroundingFields :: Position -> [Position]
+surroundingFields (Position x y)
+  | x == 0 && y == 0  = [Position (x+1) (y+1)]
+  | x == 0 && y == 7  = [Position (x+1) (y-1)]
+  | x == 7 && y == 0  = [Position (x-1) (y+1)]
+  | x == 7 && y == 7  = [Position (x-1) (y-1)]
+  | x == 0      = [(Position (x+1) (y-1)), (Position (x+1) (y+1))]
+  | x == 7      = [(Position (x-1) (y-1)), (Position (x-1) (y+1))]
+  | y == 0      = [(Position (x-1) (y+1)), (Position (x+1) (y+1))]
+  | y == 7      = [(Position (x-1) (y-1)), (Position (x+1) (y-1))]
+  | otherwise     = [(Position (x-1) (y-1)), (Position (x-1) (y+1)), (Position (x+1) (y-1)), (Position (x+1) (y+1))]
+surroundingFields (Position (x, y)) = surroundingFields (Position x y)
+
+isOccupied :: GameState -> Position -> Bool
 isOccupied (GameState w [] _) p = w == p
 isOccupied g@(GameState w (h:hs) t) p
   | h == p = True
@@ -35,15 +49,15 @@ isValidOption s max
 
 -- Save
 
-instance Binary Point where
-  put (Point x y) = do
+instance Binary Position where
+  put (Position x y) = do
     put ((fromIntegral x) :: Word8)
     put ((fromIntegral y) :: Word8)
 
   get = do
     x <- get :: Get Word8
     y <- get :: Get Word8
-    return (Point ((fromIntegral x) :: Int) ((fromIntegral y) :: Int))
+    return (Position ((fromIntegral x) :: Int) ((fromIntegral y) :: Int))
 
 instance Binary Turn where
   put t = case t of
@@ -65,8 +79,8 @@ instance Binary GameState where
     put t
 
   get = do
-    w <- get :: Get Point
-    hs <- get :: Get [Point]
+    w <- get :: Get Position
+    hs <- get :: Get [Position]
     t <- get :: Get Turn
     return (GameState w hs t)
 
@@ -91,8 +105,8 @@ load = do
 getSheepMove :: GameState -> GameState -> GameState
 getSheepMove (GameState w hs _) (GameState _ newHs _) = (GameState w newHs WolfTurn)
 
-houndsMove :: GameState -> GameState
-houndsMove g = getBestMove g
+sheepMove :: GameState -> GameState
+sheepMove g = getBestMove g
 
 depth :: Int
 depth = 4
@@ -109,10 +123,10 @@ getPossibleMoves g@(GameState w hs WolfTurn) = [GameState loc hs SheepTurn | loc
     locations = [p | p <- (surroundingFields w), not (isOccupied g p)]
 getPossibleMoves g@(GameState w hs SheepTurn) = getSheepPossibleMoves g [] hs
 --                      done  not done
-getSheepPossibleMoves :: GameState -> [Point] -> [Point] -> [GameState]
+getSheepPossibleMoves :: GameState -> [Position] -> [Position] -> [GameState]
 getSheepPossibleMoves _ _ [] = []
-getSheepPossibleMoves g@(GameState w _ _) done (cur@(Point _ hy):ndone) = [(GameState w (done ++ [loc] ++ ndone) WolfTurn) | loc <- locations] ++ (getSheepPossibleMoves g (done ++ [cur]) ndone)
-  where locations = [p | p@(Point _ py) <- (surroundingFields cur), (not (isOccupied g p)) && py > hy]
+getSheepPossibleMoves g@(GameState w _ _) done (cur@(Position _ hy):ndone) = [(GameState w (done ++ [loc] ++ ndone) WolfTurn) | loc <- locations] ++ (getSheepPossibleMoves g (done ++ [cur]) ndone)
+  where locations = [p | p@(Position _ py) <- (surroundingFields cur), (not (isOccupied g p)) && py > hy]
 
 getGameStateRate :: GameState -> Int -> Int
 getGameStateRate g 0 = getGameStateRate' g
@@ -137,15 +151,15 @@ getGameStateRate' g@(GameState w hs t) =
     Wolf  -> -100
     Neither -> (getSurroundingSheepCount w hs) * 20 - (wolfDistance w) * 10 - 10 * (fault1 w hs)
 
-getSurroundingSheepCount :: Point -> [Point] -> Int
+getSurroundingSheepCount :: Position -> [Position] -> Int
 getSurroundingSheepCount w hs = length [h | h <- hs, isNeighbour w h]
 
-isNeighbour :: Point -> Point -> Bool
-isNeighbour (Point px py) (Point qx qy) = (abs (px - qx) == 1) && (abs (py - qy) == 1)
+isNeighbour :: Position -> Position -> Bool
+isNeighbour (Position px py) (Position qx qy) = (abs (px - qx) == 1) && (abs (py - qy) == 1)
 
-wolfDistance :: Point -> Int
-wolfDistance (Point px py) = 7 - py
+wolfDistance :: Position -> Int
+wolfDistance (Position px py) = 7 - py
 
-fault1 :: Point -> [Point] -> Int
+fault1 :: Position -> [Position] -> Int
 fault1 _ [] = 0
-fault1 w@(Point _ wy) ((Point _ hy):hs) = (maximum [0, hy - wy]) + (fault1 w hs)
+fault1 w@(Position _ wy) ((Position _ hy):hs) = (maximum [0, hy - wy]) + (fault1 w hs)
