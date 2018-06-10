@@ -2,7 +2,9 @@ module GameElements where
 
 import Data.List
 
-type Point = (Int, Int)
+-- data Point (Int, Int) = Point Int Int
+type Point = (Int,Int)
+
 --data Position a b = Point (a, b) deriving (Show, Eq)
 --data Point a b = Point (a, b) deriving (Show, Eq)
 --data Point (a, b) = Point (a, b)
