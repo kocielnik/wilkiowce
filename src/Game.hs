@@ -7,6 +7,7 @@ import GameState
 import GameElements
 import LoadSave
 import Control.Exception
+import Bot
 
 main = startGame
 
