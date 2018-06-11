@@ -7,7 +7,7 @@ import GameState
 import GameElements
 import LoadSave
 import Control.Exception
-import Bot
+--import Bot
 
 main = startGame
 
@@ -143,9 +143,16 @@ chooseNewSheepPosition sheep = do
                 WrongValue -> wrongValue (chooseNewSheepPosition sheep)
 
 -- Returning possible sheep moves
-possibleSheepMoves sheep = do
+--possibleSheepMoves :: Sheep -> [Point]
+possibleSheepMoves s@(Sheep point@(x,y)) = do
     -- Tu będzą, zamiast tego returna, możliwe opcje (Możliwe opcje to w prawo w dół lub w lew w dół)
-    return [(0,1), (2,1)]
+    let points = [(x-1,y+1), (x+1,y+1)]
+    let out = filterOutOfBoard points
+    return out
+
+-- Return the at most two points in front of the given sheep.
+frontPoints :: Sheep -> [Point]
+frontPoints (x,y) = [(x-1,y+1), (x+1,y+1)]
 
 -- Printing possible moves (2 max)
 printPossibleMoves [] _ = putStrLn " "
