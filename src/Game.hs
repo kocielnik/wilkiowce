@@ -106,7 +106,7 @@ makeMove gameState@(GameState wolf sheeps turn) = do
 
 -- Moving sheep and run again gameLoop
 moveSheep sheep gameState@(GameState wolf sheeps turn) = do
-    newSheepPosition <- chooseNewSheepPosition sheep
+    newSheepPosition <- chooseNewSheepPosition sheep gameState
     gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition)))
 
 -- Updating Game State after wolf move
@@ -124,38 +124,64 @@ getWinner gameState
     | otherwise = Neither
 
 -- Getting from user new sheep position
-chooseNewSheepPosition sheep = do
+chooseNewSheepPosition sheep gameState = do
     putStrLn chooseNewSheepPositionMessage
-    possibleMoves <- possibleSheepMoves sheep
+    possibleMoves <- possibleSheepMoves sheep gameState
     printPossibleMoves possibleMoves 1
-    option <- getOption strToChooseNewPositionMenuOption
     let listLen = length possibleMoves
     case listLen of
+        0 -> do
+            putStrLn "Nie możesz wykonać żadnego ruchu tą owcą!"
+            makeMove gameState
         1 -> do
+            option <- getOption strToChooseNewPositionMenuOption
             case option of
                 PossibleMove_1 -> return (possibleMoves!!0)
-                PossibleMove_2 -> wrongValue (chooseNewSheepPosition sheep)
-                WrongValue -> wrongValue (chooseNewSheepPosition sheep)
+                PossibleMove_2 -> wrongValue (chooseNewSheepPosition sheep gameState)
+                WrongValue -> wrongValue (chooseNewSheepPosition sheep gameState)
         2 -> do
+            option <- getOption strToChooseNewPositionMenuOption
             case option of
                 PossibleMove_1 -> return (possibleMoves!!0)
                 PossibleMove_2 -> return (possibleMoves!!1)
-                WrongValue -> wrongValue (chooseNewSheepPosition sheep)
+                WrongValue -> wrongValue (chooseNewSheepPosition sheep gameState)
 
 -- Returning possible sheep moves
 --possibleSheepMoves :: Sheep -> [Point]
-possibleSheepMoves s@(Sheep point@(x,y)) = do
+possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
     -- Tu będzą, zamiast tego returna, możliwe opcje (Możliwe opcje to w prawo w dół lub w lew w dół)
     let points = [(x-1,y+1), (x+1,y+1)]
-    let out = filterOutOfBoard points
-    return out
+    let inBoardPoints = filterOutOfBoard points
+    let notOccupiedPoints = filterOccupied inBoardPoints gameState
+    return notOccupiedPoints
 
 -- Return the at most two points in front of the given sheep.
 frontPoints :: Sheep -> [Point]
-frontPoints (x,y) = [(x-1,y+1), (x+1,y+1)]
+frontPoints (Sheep(x,y)) = [(x-1,y+1), (x+1,y+1)]
 
 -- Printing possible moves (2 max)
 printPossibleMoves [] _ = putStrLn " "
 printPossibleMoves (move:moves) n = do
     putStrLn (show move ++ " (" ++ (show n) ++ ")")
     printPossibleMoves moves (n+1)
+
+filterOutOfBoard :: [Point] -> [Point]
+filterOutOfBoard [] = []
+filterOutOfBoard (point:pointList) | onBoard point = [point] ++ filterOutOfBoard pointList
+                                   | otherwise = filterOutOfBoard pointList
+onBoard :: Point -> Bool
+onBoard p@(x,y)
+    | x >= 0 && x < 8 && y >= 0 && y < 8 = True
+    | otherwise     = False
+
+filterOccupied :: [Point] -> GameState -> [Point]
+filterOccupied [] _ = []
+filterOccupied (point: pointList) gameState
+    | isOccupied gameState point = filterOccupied pointList gameState
+    | otherwise = [point] ++ filterOccupied pointList gameState
+
+isOccupied :: GameState -> Point -> Bool
+isOccupied (GameState w@(Wolf point) [] _) p = point == p
+isOccupied g@(GameState w (h@(Sheep point):hs) t) p
+  | point == p = True
+  | otherwise = isOccupied (GameState w hs t) p
