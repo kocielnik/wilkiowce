@@ -35,8 +35,8 @@ getOption strToOption = do
 
 -- Main game loop
 startNewGame = do
-    pm <- possibleWolfMoves startingGameState
-    gameLoop startingGameState pm
+--    pm <- possibleWolfMoves startingGameState
+    gameLoop startingGameState
 
 --TODO: Create this
 loadGame = do
@@ -47,8 +47,8 @@ loadGame = do
             putStrLn "Wczytanie nie powiodło się."
             menu
         Right savedState -> do
-            pm <- possibleWolfMoves savedState
-            gameLoop savedState pm
+            --pm <- possibleWolfMoves savedState
+            gameLoop savedState
             menu
 
 -- Exit game
@@ -60,8 +60,8 @@ exitGame = do
 saveGame gameState = do
     putStrLn "Save"
     save gameState
-    pm <- possibleWolfMoves gameState
-    gameLoop gameState pm
+    --pm <- possibleWolfMoves gameState
+    gameLoop gameState
 
 -- Returning error and show starting menu
 wrongValue endpoint = do
@@ -69,16 +69,17 @@ wrongValue endpoint = do
     endpoint
 
 -- GameLoop, main game content
-gameLoop gameState@(GameState wolf sheeps turn) pm
-    | getWinner gameState pm == WolfWinner = do
+-- gameLoop :: GameState -> Wolf -> IO
+gameLoop gameState@(GameState wolf sheeps turn)
+    | getWinner gameState == WolfWinner = do
       putStrLn loseMessage
       startGame
-    | getWinner gameState pm == SheepWinner = do
+    | getWinner gameState == SheepWinner = do
       putStrLn winMessage
       startGame
     | turn == WolfTurn  = do
       printGameState gameState
-      gameLoop (updateGameStateWolf gameState (Wolf (2,7))) pm
+      gameLoop (updateGameStateWolf gameState (Wolf (2,7)))
     | turn == SheepTurn = do
       printGameState gameState
       chooseInGameOption gameState
@@ -109,8 +110,7 @@ makeMove gameState@(GameState wolf sheeps turn) = do
 -- Moving sheep and run again gameLoop
 moveSheep sheep gameState@(GameState wolf sheeps turn) = do
     newSheepPosition <- chooseNewSheepPosition sheep gameState
-    npm <- possibleWolfMoves (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition)))
-    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition))) npm
+    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition)))
 
 -- Updating Game State after wolf move
 updateGameStateWolf :: GameState -> Wolf -> GameState
@@ -121,10 +121,10 @@ updateGameStateSheep :: GameState -> Sheeps -> GameState
 updateGameStateSheep (GameState w _ _) ss = GameState w ss WolfTurn
 
 -- Predicting if game is end
-getWinner :: GameState -> [Point] -> Winner
-getWinner gameState@(GameState wolf@(Wolf(x,y)) sheeps turn) pm
+getWinner :: GameState -> Winner
+getWinner gameState@(GameState wolf@(Wolf(x,y)) sheeps turn)
     | y == 0 = WolfWinner
-    | length pm == 0 = SheepWinner
+    | length (possibleWolfMoves gameState) == 0 = SheepWinner
     | otherwise = Neither
 
 -- Getting from user new sheep position
@@ -158,11 +158,12 @@ chooseNewSheepPosition sheep gameState = do
 --    let points_in_range = filterOutOfBoard points
 --    return points_in_range
 
-possibleWolfMoves gameState@(GameState w@(Wolf point@(x,y)) sheep turn) = do
-    let points = [(x-1,y-1), (x+1,y-1), (x-1,y+1), (x+1,y+1)]
-    let inBoardPoints = filterOutOfBoard points
-    let notOccupiedPoints = filterOccupied inBoardPoints gameState
-    return notOccupiedPoints
+possibleWolfMoves :: GameState -> [Point]
+possibleWolfMoves gameState@(GameState w@(Wolf point@(x,y)) sheep turn) = filterOccupied inBoardPoints gameState
+    where 
+    inBoardPoints = filterOutOfBoard points
+        where
+        points = [(x-1,y-1), (x+1,y-1), (x-1,y+1), (x+1,y+1)]
 
 possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
     let points = [(x-1,y+1), (x+1,y+1)]
@@ -198,3 +199,9 @@ isOccupied (GameState w@(Wolf point) [] _) p = point == p
 isOccupied g@(GameState w (h@(Sheep point):hs) t) p
   | point == p = True
   | otherwise = isOccupied (GameState w hs t) p
+
+--selectMove :: GameState -> Point
+--selectMove s
+--    | possibleWolfMoves s == [] = error "No wolf moves left. You won!"
+--    | otherwise = fst $ possibleWolfMoves s
+
