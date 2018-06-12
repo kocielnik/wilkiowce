@@ -79,7 +79,7 @@ gameLoop gameState@(GameState wolf sheeps turn)
       startGame
     | turn == WolfTurn  = do
       printGameState gameState
-      gameLoop (updateGameStateWolf gameState (Wolf (2,7)))
+      gameLoop (updateGameStateWolf gameState (Wolf (bestMove gameState)))
     | turn == SheepTurn = do
       printGameState gameState
       chooseInGameOption gameState
@@ -200,8 +200,63 @@ isOccupied g@(GameState w (h@(Sheep point):hs) t) p
   | point == p = True
   | otherwise = isOccupied (GameState w hs t) p
 
---selectMove :: GameState -> Point
---selectMove s
---    | possibleWolfMoves s == [] = error "No wolf moves left. You won!"
---    | otherwise = fst $ possibleWolfMoves s
+-- Simple "best move" algorithm
+bestMove :: GameState -> Point
+bestMove s = head (possibleWolfMoves s)
 
+-- AI-induced best move
+getBestMove :: GameState -> Point
+getBestMove g = head (snd (maximumBy fstCmp rates))
+  where
+    possible = getPossibleMoves g
+    rates = [getGameStateRate m depth | m <- possible]
+        where depth = 3
+
+getPossibleMoves :: GameState -> [Point]
+getPossibleMoves g@(GameState w hs WolfTurn) = possibleWolfMoves g
+getPossibleMoves g@(GameState w hs SheepTurn) = possibleSheepMoves g
+
+surroundingFields :: Point -> [Point]
+surroundingFields (x,y)
+  | x == 0 && y == 0  = [((x+1), (y+1))]
+  | x == 0 && y == 7  = [((x+1), (y-1))]
+  | x == 7 && y == 0  = [((x-1), (y+1))]
+  | x == 7 && y == 7  = [((x-1), (y-1))]
+  | x == 0      = [((x+1), (y-1)), ((x+1), (y+1))]
+  | x == 7      = [((x-1), (y-1)), ((x-1), (y+1))]
+  | y == 0      = [((x-1), (y+1)), ((x+1), (y+1))]
+  | y == 7      = [((x-1), (y-1)), ((x+1), (y-1))]
+  | otherwise     = [((x-1), (y-1)), ((x-1), (y+1)), ((x+1), (y-1)), ((x+1), (y+1))]
+
+fstCmp :: (Ord a) => (a,b) -> (a,b) -> Ordering
+fstCmp (a1, b1) (a2, b2)
+  | a1 > a2 = GT
+  | a1 < a2 = LT
+  | otherwise = EQ
+
+getGameStateRate :: GameState -> Int -> Int
+getGameStateRate g 0 = getGameStateRate' g
+getGameStateRate g@(GameState w hs t) d
+  | length moves == 0 = getGameStateRate' g
+  | t == SheepTurn = minimum rates
+  | otherwise = maximum rates
+  where
+    moves = getPossibleMoves g
+    rates = [getGameStateRate m (d-1) | m <- moves]
+
+getGameStateRate' :: GameState -> Int
+getGameStateRate' g@(GameState w hs t) =
+  case (getWinner g) of
+    Sheep  -> 100
+    Wolf  -> -100
+    Neither -> (getSurroundingSheepCount w hs) * 20 - (wolfDistance w) * 10 - 10 * (fault1 w hs)
+
+getSurroundingSheepCount :: Point -> [Point] -> Int
+getSurroundingSheepCount w hs = length [h | h <- hs, isNeighbour w h]
+
+wolfDistance :: Point -> Int
+wolfDistance (px, py) = 7 - py
+
+fault1 :: Point -> [Point] -> Int
+fault1 _ [] = 0
+fault1 w@(_,wy) ((_,hy):hs) = (maximum [0, hy - wy]) + (fault1 w hs)
