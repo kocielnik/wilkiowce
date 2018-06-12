@@ -35,7 +35,8 @@ getOption strToOption = do
 
 -- Main game loop
 startNewGame = do
-    gameLoop startingGameState
+    pm <- possibleWolfMoves startingGameState
+    gameLoop startingGameState pm
 
 --TODO: Create this
 loadGame = do
@@ -46,7 +47,8 @@ loadGame = do
             putStrLn "Wczytanie nie powiodło się."
             menu
         Right savedState -> do
-            gameLoop savedState
+            pm <- possibleWolfMoves savedState
+            gameLoop savedState pm
             menu
 
 -- Exit game
@@ -58,7 +60,8 @@ exitGame = do
 saveGame gameState = do
     putStrLn "Save"
     save gameState
-    gameLoop gameState
+    pm <- possibleWolfMoves gameState
+    gameLoop gameState pm
 
 -- Returning error and show starting menu
 wrongValue endpoint = do
@@ -66,17 +69,16 @@ wrongValue endpoint = do
     endpoint
 
 -- GameLoop, main game content
-gameLoop gameState@(GameState wolf sheeps turn)
-    | getWinner gameState == WolfWinner = do
+gameLoop gameState@(GameState wolf sheeps turn) pm
+    | getWinner gameState pm == WolfWinner = do
       putStrLn loseMessage
       startGame
-    | getWinner gameState == SheepWinner = do
+    | getWinner gameState pm == SheepWinner = do
       putStrLn winMessage
       startGame
     | turn == WolfTurn  = do
       printGameState gameState
-      -- Tutaj zamiast Wolf (1,3) będzie wynik predykcji AI
-      gameLoop (updateGameStateWolf gameState (Wolf (2,3)))
+      gameLoop (updateGameStateWolf gameState (Wolf (2,7))) pm
     | turn == SheepTurn = do
       printGameState gameState
       chooseInGameOption gameState
@@ -107,7 +109,8 @@ makeMove gameState@(GameState wolf sheeps turn) = do
 -- Moving sheep and run again gameLoop
 moveSheep sheep gameState@(GameState wolf sheeps turn) = do
     newSheepPosition <- chooseNewSheepPosition sheep gameState
-    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition)))
+    npm <- possibleWolfMoves (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition)))
+    gameLoop (updateGameStateSheep gameState (updateSheeps sheeps sheep (Sheep newSheepPosition))) npm
 
 -- Updating Game State after wolf move
 updateGameStateWolf :: GameState -> Wolf -> GameState
@@ -118,9 +121,10 @@ updateGameStateSheep :: GameState -> Sheeps -> GameState
 updateGameStateSheep (GameState w _ _) ss = GameState w ss WolfTurn
 
 -- Predicting if game is end
-getWinner :: GameState -> Winner
-getWinner gameState
-    -- Tutaj sprawdzanie czy ktoś nie wygrał tzn czy wilk ma jeszcze jakiś ruch, lub czy dostał się do któregoś z górnych pól (x,0)
+getWinner :: GameState -> [Point] -> Winner
+getWinner gameState@(GameState wolf@(Wolf(x,y)) sheeps turn) pm
+    | y == 0 = WolfWinner
+    | length pm == 0 = SheepWinner
     | otherwise = Neither
 
 -- Getting from user new sheep position
@@ -154,13 +158,13 @@ chooseNewSheepPosition sheep gameState = do
 --    let points_in_range = filterOutOfBoard points
 --    return points_in_range
 
-possibleWolfMoves s@(Wolf point@(x,y)) = do
-    let points = [(x-1,y-1), (x+1,y-1)]
-    let points_in_range = filterOutOfBoard points
-    return points_in_range
+possibleWolfMoves gameState@(GameState w@(Wolf point@(x,y)) sheep turn) = do
+    let points = [(x-1,y-1), (x+1,y-1), (x-1,y+1), (x+1,y+1)]
+    let inBoardPoints = filterOutOfBoard points
+    let notOccupiedPoints = filterOccupied inBoardPoints gameState
+    return notOccupiedPoints
 
 possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
-    -- Tu będzą, zamiast tego returna, możliwe opcje (Możliwe opcje to w prawo w dół lub w lew w dół)
     let points = [(x-1,y+1), (x+1,y+1)]
     let inBoardPoints = filterOutOfBoard points
     let notOccupiedPoints = filterOccupied inBoardPoints gameState
