@@ -18,7 +18,10 @@ data Wolf = Wolf Point deriving (Show, Eq)
 printWolf :: Wolf -> IO()
 printWolf wolf = putStrLn (show wolf)
 
-data Sheep = Sheep Point deriving (Show, Eq)
+data Sheep = Sheep Point deriving (Eq)
+
+instance Show Sheep where
+    show (Sheep (x,y)) = "Owca: " ++ "(" ++ (show (x+1)) ++ "," ++ (show (y+1)) ++ ")"
 
 printSheep :: Sheep -> Int -> IO()
 printSheep sheep n = putStrLn (show sheep ++ " (" ++ (show n) ++ ")")

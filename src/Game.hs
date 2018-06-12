@@ -76,7 +76,7 @@ gameLoop gameState@(GameState wolf sheeps turn)
     | turn == WolfTurn  = do
       printGameState gameState
       -- Tutaj zamiast Wolf (1,3) będzie wynik predykcji AI
-      gameLoop (updateGameStateWolf gameState (Wolf (1,3)))
+      gameLoop (updateGameStateWolf gameState (Wolf (2,3)))
     | turn == SheepTurn = do
       printGameState gameState
       chooseInGameOption gameState
@@ -146,8 +146,19 @@ chooseNewSheepPosition sheep gameState = do
                 PossibleMove_2 -> return (possibleMoves!!1)
                 WrongValue -> wrongValue (chooseNewSheepPosition sheep gameState)
 
+
 -- Returning possible sheep moves
 --possibleSheepMoves :: Sheep -> [Point]
+--possibleSheepMoves s@(Sheep point@(x,y)) = do
+--    let points = [(x-1,y+1), (x+1,y+1)]
+--    let points_in_range = filterOutOfBoard points
+--    return points_in_range
+
+possibleWolfMoves s@(Wolf point@(x,y)) = do
+    let points = [(x-1,y-1), (x+1,y-1)]
+    let points_in_range = filterOutOfBoard points
+    return points_in_range
+
 possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
     -- Tu będzą, zamiast tego returna, możliwe opcje (Możliwe opcje to w prawo w dół lub w lew w dół)
     let points = [(x-1,y+1), (x+1,y+1)]
@@ -155,20 +166,18 @@ possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
     let notOccupiedPoints = filterOccupied inBoardPoints gameState
     return notOccupiedPoints
 
--- Return the at most two points in front of the given sheep.
-frontPoints :: Sheep -> [Point]
-frontPoints (Sheep(x,y)) = [(x-1,y+1), (x+1,y+1)]
-
 -- Printing possible moves (2 max)
 printPossibleMoves [] _ = putStrLn " "
-printPossibleMoves (move:moves) n = do
-    putStrLn (show move ++ " (" ++ (show n) ++ ")")
+printPossibleMoves (move@(x,y):moves) n = do
+    putStrLn ( "Pole: " ++ "(" ++ (show (x+1)) ++ "," ++ (show (y+1)) ++ ")" ++ " (" ++ (show n) ++ ")")
     printPossibleMoves moves (n+1)
 
 filterOutOfBoard :: [Point] -> [Point]
 filterOutOfBoard [] = []
 filterOutOfBoard (point:pointList) | onBoard point = [point] ++ filterOutOfBoard pointList
                                    | otherwise = filterOutOfBoard pointList
+
+-- Check if point parameters are inside board coordinates
 onBoard :: Point -> Bool
 onBoard p@(x,y)
     | x >= 0 && x < 8 && y >= 0 && y < 8 = True
