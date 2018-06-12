@@ -146,14 +146,6 @@ chooseNewSheepPosition sheep gameState = do
                 PossibleMove_2 -> return (possibleMoves!!1)
                 WrongValue -> wrongValue (chooseNewSheepPosition sheep gameState)
 
--- Check if point parameters are inside board coordinates
-onBoard :: Point -> Bool
-onBoard p
-    | fst p >= 1 && fst p <= 8 && snd p >= 1 && snd p <= 8  = True
-    | otherwise                                             = False
-
-filterOutOfBoard :: [Point] -> [Point]
-filterOutOfBoard ps = filter onBoard ps
 
 -- Returning possible sheep moves
 --possibleSheepMoves :: Sheep -> [Point]
@@ -184,6 +176,8 @@ filterOutOfBoard :: [Point] -> [Point]
 filterOutOfBoard [] = []
 filterOutOfBoard (point:pointList) | onBoard point = [point] ++ filterOutOfBoard pointList
                                    | otherwise = filterOutOfBoard pointList
+
+-- Check if point parameters are inside board coordinates
 onBoard :: Point -> Bool
 onBoard p@(x,y)
     | x >= 0 && x < 8 && y >= 0 && y < 8 = True
