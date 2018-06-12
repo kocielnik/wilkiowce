@@ -76,7 +76,7 @@ gameLoop gameState@(GameState wolf sheeps turn)
     | turn == WolfTurn  = do
       printGameState gameState
       -- Tutaj zamiast Wolf (1,3) będzie wynik predykcji AI
-      gameLoop (updateGameStateWolf gameState (Wolf (1,3)))
+      gameLoop (updateGameStateWolf gameState (Wolf (2,3)))
     | turn == SheepTurn = do
       printGameState gameState
       chooseInGameOption gameState
@@ -168,8 +168,8 @@ possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
 
 -- Printing possible moves (2 max)
 printPossibleMoves [] _ = putStrLn " "
-printPossibleMoves (move:moves) n = do
-    putStrLn (show move ++ " (" ++ (show n) ++ ")")
+printPossibleMoves (move@(x,y):moves) n = do
+    putStrLn ( "Pole: " ++ "(" ++ (show (x+1)) ++ "," ++ (show (y+1)) ++ ")" ++ " (" ++ (show n) ++ ")")
     printPossibleMoves moves (n+1)
 
 filterOutOfBoard :: [Point] -> [Point]
