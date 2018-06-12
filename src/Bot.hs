@@ -14,9 +14,6 @@ onBoard p@(x,y)
     | x,y <- [1..8] = True
     | otherwise     = False
 
-filterOutOfBoard :: [Point] -> [Point]
-filterOutOfBoard pointList = filter (onBoard . tail)
-
 getBestMove :: GameState -> GameState
 getBestMove g = snd (maximumBy fstCmp rates)
   where

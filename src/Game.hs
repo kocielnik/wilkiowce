@@ -142,17 +142,21 @@ chooseNewSheepPosition sheep = do
                 PossibleMove_2 -> return (possibleMoves!!1)
                 WrongValue -> wrongValue (chooseNewSheepPosition sheep)
 
+onBoard :: Point -> Bool
+onBoard p
+    | fst p >= 1 && fst p <= 8 && snd p >= 1 && snd p <= 8  = True
+    | otherwise                                             = False
+
+filterOutOfBoard :: [Point] -> [Point]
+filterOutOfBoard ps = filter onBoard ps
+
 -- Returning possible sheep moves
 --possibleSheepMoves :: Sheep -> [Point]
 possibleSheepMoves s@(Sheep point@(x,y)) = do
     -- Tu będzą, zamiast tego returna, możliwe opcje (Możliwe opcje to w prawo w dół lub w lew w dół)
     let points = [(x-1,y+1), (x+1,y+1)]
-    let out = filterOutOfBoard points
-    return out
-
--- Return the at most two points in front of the given sheep.
-frontPoints :: Sheep -> [Point]
-frontPoints (x,y) = [(x-1,y+1), (x+1,y+1)]
+    let points_in_range = filterOutOfBoard points
+    return points_in_range
 
 -- Printing possible moves (2 max)
 printPossibleMoves [] _ = putStrLn " "
