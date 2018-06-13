@@ -28,7 +28,7 @@ printSheep sheep n = putStrLn (show sheep ++ " (" ++ (show n) ++ ")")
 
 -- Creating wolf
 wolf :: Wolf
-wolf = Wolf (1,7)
+wolf = Wolf (0,7)
 
 -- Creating sheeps
 sheep_1 :: Sheep
