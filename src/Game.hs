@@ -13,7 +13,7 @@ import Control.Exception
 import Ai
 import MovesPossibilities
 
-main = startGame
+main = run
 
 run = do
     putStrLn startingMessage
@@ -72,17 +72,17 @@ wrongValue endpoint = do
 -- GameLoop, main game content
 gameLoop gameState@(GameState wolf sheeps turn)
     | getWinner gameState == WolfWinner = do
+      printGameState gameState
       putStrLn loseMessage
       startGame
     | getWinner gameState == SheepWinner = do
+      printGameState gameState
       putStrLn winMessage
       startGame
     | turn == WolfTurn  = do
       printGameState gameState
       putStrLn wolfTurnMessage
       let best@(GameState wolf sheeps turn) = getBestMove gameState
-      putStr (show (possibleWolfMove gameState))
-      putStr (show (getBest gameState))
       gameLoop (updateGameStateWolf gameState wolf)
     | turn == SheepTurn = do
       printGameState gameState
