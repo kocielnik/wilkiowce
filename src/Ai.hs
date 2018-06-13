@@ -57,7 +57,7 @@ getGameStateRate' g@(GameState w@(Wolf p) ss t) =
   case (getWinner g) of
     SheepWinner -> -100
     WolfWinner -> 100
-    Neither -> -10 * fromIntegral (endBoardDistance p)  + 5 * minimum (getDistance ss p) - 10 * fromIntegral (length ((getSurroundingSheeps p ss)))
+    Neither -> -10 * fromIntegral (endBoardDistance p)  + 5 * minimum (getDistance ss p) - 8 * fromIntegral (length ((getSurroundingSheeps p ss)))
 
 -- Returning wolf distance from winning position
 endBoardDistance :: Point -> Int
