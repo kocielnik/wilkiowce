@@ -11,3 +11,7 @@ Implementacja gry warcabowej.
 Przedmiot: Specyfikacje formalne i programy funkcyjne (SPOP)
 
 Opiekun projektu: dr inż. Marcin Szlenk
+
+---
+
+Lokalizacja projektu: https://github.com/kocielnik/wilkiowce
