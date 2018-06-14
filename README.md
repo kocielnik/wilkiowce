@@ -2,9 +2,9 @@
 
 Mateusz Marzec, Patryk Kocielnik
 
----
+Politechnika Warszawska 2018
 
-Politechnika Warszawska, 2018
+---
 
 Implementacja gry warcabowej.
 
