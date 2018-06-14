@@ -77,5 +77,6 @@ chooseSheepMenu = [Sheep_1, Sheep_2, Sheep_3, Sheep_4]
 chooseSheepPositionMenu :: Menu
 chooseSheepPositionMenu = [PossibleMove_1, PossibleMove_2]
 
+-- Creating initial values for possible moves
 possibleMove_1 = (0,0)
 possibleMove_2 = (0,0)

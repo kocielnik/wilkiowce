@@ -6,10 +6,14 @@ import System.Exit
 import GameState
 import GameElements
 import LoadSave
+import Data.List
+import Data.Ord
+import Prelude
 import Control.Exception
---import Bot
+import Ai
+import MovesPossibilities
 
-main = startGame
+main = run
 
 run = do
     putStrLn startingMessage
@@ -35,7 +39,6 @@ getOption strToOption = do
 
 -- Main game loop
 startNewGame = do
---    pm <- possibleWolfMoves startingGameState
     gameLoop startingGameState
 
 --TODO: Create this
@@ -47,7 +50,6 @@ loadGame = do
             putStrLn "Wczytanie nie powiodło się."
             menu
         Right savedState -> do
-            --pm <- possibleWolfMoves savedState
             gameLoop savedState
             menu
 
@@ -60,7 +62,6 @@ exitGame = do
 saveGame gameState = do
     putStrLn "Save"
     save gameState
-    --pm <- possibleWolfMoves gameState
     gameLoop gameState
 
 -- Returning error and show starting menu
@@ -69,19 +70,23 @@ wrongValue endpoint = do
     endpoint
 
 -- GameLoop, main game content
--- gameLoop :: GameState -> Wolf -> IO
 gameLoop gameState@(GameState wolf sheeps turn)
     | getWinner gameState == WolfWinner = do
+      printGameState gameState
       putStrLn loseMessage
       startGame
     | getWinner gameState == SheepWinner = do
+      printGameState gameState
       putStrLn winMessage
       startGame
     | turn == WolfTurn  = do
       printGameState gameState
-      gameLoop (updateGameStateWolf gameState (Wolf (bestMove gameState)))
+      putStrLn wolfTurnMessage
+      let best@(GameState wolf sheeps turn) = getBestMove gameState
+      gameLoop (updateGameStateWolf gameState wolf)
     | turn == SheepTurn = do
       printGameState gameState
+      putStrLn sheepTurnMessage
       chooseInGameOption gameState
 
 -- Showing ang getting in game options
@@ -120,17 +125,10 @@ updateGameStateWolf (GameState _ ss _) p = GameState p ss SheepTurn
 updateGameStateSheep :: GameState -> Sheeps -> GameState
 updateGameStateSheep (GameState w _ _) ss = GameState w ss WolfTurn
 
--- Predicting if game is end
-getWinner :: GameState -> Winner
-getWinner gameState@(GameState wolf@(Wolf(x,y)) sheeps turn)
-    | y == 0 = WolfWinner
-    | length (possibleWolfMoves gameState) == 0 = SheepWinner
-    | otherwise = Neither
-
 -- Getting from user new sheep position
 chooseNewSheepPosition sheep gameState = do
     putStrLn chooseNewSheepPositionMessage
-    possibleMoves <- possibleSheepMoves sheep gameState
+    let possibleMoves = possibleSheepMove sheep gameState
     printPossibleMoves possibleMoves 1
     let listLen = length possibleMoves
     case listLen of
@@ -149,115 +147,3 @@ chooseNewSheepPosition sheep gameState = do
                 PossibleMove_1 -> return (possibleMoves!!0)
                 PossibleMove_2 -> return (possibleMoves!!1)
                 WrongValue -> wrongValue (chooseNewSheepPosition sheep gameState)
-
-
--- Returning possible sheep moves
---possibleSheepMoves :: Sheep -> [Point]
---possibleSheepMoves s@(Sheep point@(x,y)) = do
---    let points = [(x-1,y+1), (x+1,y+1)]
---    let points_in_range = filterOutOfBoard points
---    return points_in_range
-
-possibleWolfMoves :: GameState -> [Point]
-possibleWolfMoves gameState@(GameState w@(Wolf point@(x,y)) sheep turn) = filterOccupied inBoardPoints gameState
-    where 
-    inBoardPoints = filterOutOfBoard points
-        where
-        points = [(x-1,y-1), (x+1,y-1), (x-1,y+1), (x+1,y+1)]
-
-possibleSheepMoves s@(Sheep point@(x,y)) gameState = do
-    let points = [(x-1,y+1), (x+1,y+1)]
-    let inBoardPoints = filterOutOfBoard points
-    let notOccupiedPoints = filterOccupied inBoardPoints gameState
-    return notOccupiedPoints
-
--- Printing possible moves (2 max)
-printPossibleMoves [] _ = putStrLn " "
-printPossibleMoves (move@(x,y):moves) n = do
-    putStrLn ( "Pole: " ++ "(" ++ (show (x+1)) ++ "," ++ (show (y+1)) ++ ")" ++ " (" ++ (show n) ++ ")")
-    printPossibleMoves moves (n+1)
-
-filterOutOfBoard :: [Point] -> [Point]
-filterOutOfBoard [] = []
-filterOutOfBoard (point:pointList) | onBoard point = [point] ++ filterOutOfBoard pointList
-                                   | otherwise = filterOutOfBoard pointList
-
--- Check if point parameters are inside board coordinates
-onBoard :: Point -> Bool
-onBoard p@(x,y)
-    | x >= 0 && x < 8 && y >= 0 && y < 8 = True
-    | otherwise     = False
-
-filterOccupied :: [Point] -> GameState -> [Point]
-filterOccupied [] _ = []
-filterOccupied (point: pointList) gameState
-    | isOccupied gameState point = filterOccupied pointList gameState
-    | otherwise = [point] ++ filterOccupied pointList gameState
-
-isOccupied :: GameState -> Point -> Bool
-isOccupied (GameState w@(Wolf point) [] _) p = point == p
-isOccupied g@(GameState w (h@(Sheep point):hs) t) p
-  | point == p = True
-  | otherwise = isOccupied (GameState w hs t) p
-
--- Simple "best move" algorithm
-bestMove :: GameState -> Point
-bestMove s = head (possibleWolfMoves s)
-
--- AI-induced best move
-getBestMove :: GameState -> Point
-getBestMove g = head (snd (maximumBy fstCmp rates))
-  where
-    possible = getPossibleStates g
-    rates = [getGameStateRate m depth | m <- possible]
-        where depth = 3
-
-getPossibleStates :: GameState -> [GameState]
-getPossibleStates g@(GameState w hs WolfTurn)
-    = [GameState g':gs | g' <- possibleWolfMoves g]
-getPossibleStates g@(GameState w hs SheepTurn) = possibleSheepMoves g
-
-surroundingFields :: Point -> [Point]
-surroundingFields (x,y)
-  | x == 0 && y == 0  = [((x+1), (y+1))]
-  | x == 0 && y == 7  = [((x+1), (y-1))]
-  | x == 7 && y == 0  = [((x-1), (y+1))]
-  | x == 7 && y == 7  = [((x-1), (y-1))]
-  | x == 0      = [((x+1), (y-1)), ((x+1), (y+1))]
-  | x == 7      = [((x-1), (y-1)), ((x-1), (y+1))]
-  | y == 0      = [((x-1), (y+1)), ((x+1), (y+1))]
-  | y == 7      = [((x-1), (y-1)), ((x+1), (y-1))]
-  | otherwise     = [((x-1), (y-1)), ((x-1), (y+1)), ((x+1), (y-1)), ((x+1), (y+1))]
-
-fstCmp :: (Ord a) => (a,b) -> (a,b) -> Ordering
-fstCmp (a1, b1) (a2, b2)
-  | a1 > a2 = GT
-  | a1 < a2 = LT
-  | otherwise = EQ
-
-getGameStateRate :: GameState -> Int -> Int
-getGameStateRate g 0 = getGameStateRate' g
-getGameStateRate g@(GameState w hs t) d
-  | length moves == 0 = getGameStateRate' g
-  | t == SheepTurn = minimum rates
-  | otherwise = maximum rates
-  where
-    moves = getPossibleMoves g
-    rates = [getGameStateRate m (d-1) | m <- moves]
-
-getGameStateRate' :: GameState -> Int
-getGameStateRate' g@(GameState w hs t) =
-  case (getWinner g) of
-    Sheep  -> 100
-    Wolf  -> -100
-    Neither -> (getSurroundingSheepCount w hs) * 20 - (wolfDistance w) * 10 - 10 * (fault1 w hs)
-
-getSurroundingSheepCount :: Point -> [Point] -> Int
-getSurroundingSheepCount w hs = length [h | h <- hs, isNeighbour w h]
-
-wolfDistance :: Point -> Int
-wolfDistance (px, py) = 7 - py
-
-fault1 :: Point -> [Point] -> Int
-fault1 _ [] = 0
-fault1 w@(_,wy) ((_,hy):hs) = (maximum [0, hy - wy]) + (fault1 w hs)
