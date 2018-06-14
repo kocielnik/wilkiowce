@@ -208,13 +208,14 @@ bestMove s = head (possibleWolfMoves s)
 getBestMove :: GameState -> Point
 getBestMove g = head (snd (maximumBy fstCmp rates))
   where
-    possible = getPossibleMoves g
+    possible = getPossibleStates g
     rates = [getGameStateRate m depth | m <- possible]
         where depth = 3
 
-getPossibleMoves :: GameState -> [Point]
-getPossibleMoves g@(GameState w hs WolfTurn) = possibleWolfMoves g
-getPossibleMoves g@(GameState w hs SheepTurn) = possibleSheepMoves g
+getPossibleStates :: GameState -> [GameState]
+getPossibleStates g@(GameState w hs WolfTurn)
+    = [GameState g':gs | g' <- possibleWolfMoves g]
+getPossibleStates g@(GameState w hs SheepTurn) = possibleSheepMoves g
 
 surroundingFields :: Point -> [Point]
 surroundingFields (x,y)
