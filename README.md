@@ -1,7 +1,13 @@
 # Wilk i Owce
 
-## Mateusz Marzec, Patryk Kocielnik, 2018
+Mateusz Marzec, Patryk Kocielnik
 
-Politechnika Warszawska
+---
+
+Politechnika Warszawska, 2018
 
 Implementacja gry warcabowej.
+
+Przedmiot: Specyfikacje formalne i programy funkcyjne (SPOP)
+
+Opiekun projektu: dr inż. Marcin Szlenk
